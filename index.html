@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>粵⾳朗讀測試字表</title>
+        <style>
+            body {
+                background: #ccc;
+            }
+
+            #viewerContainer {
+                overflow: auto;
+                position: fixed;
+                width: 100vw;
+                height: 100vh;
+                bottom: 0;
+                right: 0%;
+                z-index: 11;
+                /* user-select: none;
+      pointer-events: none; */
+                opacity: 1;
+                box-sizing: content-box;
+            }
+
+            #viewerContainer >a {
+                text-align: center;
+                display: block;
+                font-size: 12px;
+                transform: scale(0.6);
+                color: rgba(0, 0, 0, .2);
+            }
+
+            #viewer {
+                padding: calc(var(--scale-factor) * 10px);
+            }
+
+            #viewer .page {
+                border-radius: 10px;
+                overflow: hidden;
+                margin: calc(var(--scale-factor) * 10px) auto;
+            }
+
+            #viewer .textLayer span {
+                color: rgba(0,0,0,1);
+            }
+
+            #viewer a {
+                border-bottom: 2px dashed rgba(0, 0, 255, 0.448);
+                color: black;
+            }
+
+            .index {
+                max-width: 1000px;
+                margin: 0 auto;
+                display: flex;
+                gap: 15px;
+                flex-wrap: wrap;
+            }
+
+            .index a {
+                min-width: 100px;
+                color: black;
+                display: block;
+                text-align: center;
+                padding: 10px;
+            }
+
+            .index a:visited {
+                opacity: .6
+            }
+
+            .index a:hover {
+                background: rgba(0,0,0,0.1);
+                border-radius: 2px;
+            }
+
+            .outline a {
+                max-width: 600px;
+                color: black;
+                display: block;
+            }
+
+            * {
+                padding: 0;
+                margin: 0
+            }
+
+            body,html {
+                margin: 0;
+                padding: 0;
+                font-family: sans-serif
+            }
+
+            img {
+                user-select: none;
+                pointer-events: none
+            }
+
+            #viewer {
+                padding-bottom: 0
+            }
+
+            #viewerContainer * {
+                box-sizing: content-box
+            }
+
+            :root {
+                --csstools-color-scheme--light: initial;
+                color-scheme: light dark;
+                --viewer-container-height: 0;
+                --pdfViewer-padding-bottom: 0;
+                --page-margin: 1px auto -8px;
+                --page-border: 9px solid transparent;
+                --spreadHorizontalWrapped-margin-LR: -3.5px;
+                --loading-icon-delay: 400ms;
+                --csstools-light-dark-toggle--62: var(--csstools-color-scheme--light) #0df;
+                --focus-ring-color: var(--csstools-light-dark-toggle--62, #0060df);
+                --focus-ring-outline: 2px solid var(--focus-ring-color)
+            }
+
+            :root {
+                --xfa-unfocused-field-background: url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
+                --xfa-focus-outline: auto
+            }
+
+            :root {
+                --clear-signature-button-icon: url(images/editor-toolbar-delete.svg);
+                --csstools-light-dark-toggle--40: var(--csstools-color-scheme--light) #2b2a33;
+                --signature-bg: var(--csstools-light-dark-toggle--40, #f9f9fb);
+                --csstools-light-dark-toggle--41: var(--csstools-color-scheme--light) var(--signature-bg);
+                --signature-hover-bg: var(--csstools-light-dark-toggle--41, #f0f0f4);
+                --button-signature-bg: transparent;
+                --button-signature-color: var(--main-color);
+                --csstools-light-dark-toggle--42: var(--csstools-color-scheme--light) #5b5b66;
+                --button-signature-active-bg: var(--csstools-light-dark-toggle--42, #cfcfd8);
+                --button-signature-active-border: none;
+                --button-signature-active-color: var(--button-signature-color);
+                --button-signature-border: none;
+                --csstools-light-dark-toggle--43: var(--csstools-color-scheme--light) #52525e;
+                --button-signature-hover-bg: var(--csstools-light-dark-toggle--43, #e0e0e6);
+                --button-signature-hover-color: var(--button-signature-color)
+            }
+
+            .pdfViewer {
+                --scale-factor: 1;
+                --page-bg-color: unset;
+                padding-bottom: var(--pdfViewer-padding-bottom);
+                --hcm-highlight-filter: none;
+                --hcm-highlight-selected-filter: none
+            }
+
+            @media screen and (forced-colors:active) {
+                .pdfViewer {
+                    --hcm-highlight-filter: invert(100%)
+                }
+            }
+
+            .pdfViewer.copyAll {
+                cursor: wait
+            }
+
+            .pdfViewer .canvasWrapper {
+                overflow: hidden;
+                width: 100%;
+                height: 100%
+            }
+
+            :is(.pdfViewer .canvasWrapper) canvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+                margin: 0;
+                display: block;
+                width: 100%;
+                height: 100%;
+                contain: content
+            }
+
+            :is(:is(.pdfViewer .canvasWrapper) canvas) .structTree {
+                contain: strict
+            }
+
+            :is(.pdfViewer .canvasWrapper) img,:is(.pdfViewer .canvasWrapper) svg {
+                position: absolute;
+                top: 0;
+                left: 0;
+                margin: 0;
+                display: block;
+                width: 100%;
+                height: 100%;
+                contain: content
+            }
+
+            :is(:is(.pdfViewer .canvasWrapper) img) .structTree {
+                contain: strict
+            }
+
+            #hiddenCopyElement,.hiddenCanvasElement {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 0;
+                height: 0;
+                display: none
+            }
+
+            .pdfViewer .canvasWrapper {
+                overflow: hidden;
+                width: 100%;
+                height: 100%
+            }
+
+            .pdfViewer .page {
+                --user-unit: 1;
+                --page-same-width: 1;
+                --it1: calc(var(--scale-factor) * var(--user-unit) * var(--page-same-width));
+                --scale-round-x: 1px;
+                --scale-round-y: 1px;
+                width: 816px;
+                height: 1056px;
+                position: relative;
+                overflow: visible;
+                background-clip: content-box;
+                background-color: var(--page-bg-color,rgb(255 255 255))
+            }
+
+            .textLayer {
+                position: absolute;
+                text-align: initial;
+                inset: 0;
+                overflow: clip;
+                opacity: 1;
+                line-height: .86;
+                -webkit-text-size-adjust: none;
+                -moz-text-size-adjust: none;
+                text-size-adjust: none;
+                forced-color-adjust: none;
+                transform-origin: 0 0;
+                caret-color: CanvasText;
+                z-index: 0
+            }
+
+            .textLayer.highlighting {
+                touch-action: none
+            }
+
+            .textLayer :is(span) {
+                color: #00f;
+                position: absolute;
+                white-space: pre;
+                cursor: text;
+                transform-origin: 0% 0%
+            }
+
+            .textLayer :is(br) {
+                color: transparent;
+                display: none
+            }
+
+            .textLayer span.markedContent {
+                top: 0;
+                height: 0
+            }
+
+            .annotationLayer {
+                position: absolute;
+                top: 0;
+                left: 0;
+                pointer-events: none;
+                transform-origin: 0 0
+            }
+
+            .annotationLayer {
+                --csstools-color-scheme--light: initial;
+                color-scheme: only light;
+                --annotation-unfocused-field-background: url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
+                --input-focus-border-color: Highlight;
+                --input-focus-outline: 1px solid Canvas;
+                --input-unfocused-border-color: transparent;
+                --input-disabled-border-color: transparent;
+                --input-hover-border-color: black;
+                --link-outline: none
+            }
+
+            .annotationLayer section {
+                position: absolute;
+                text-align: initial;
+                pointer-events: auto;
+                box-sizing: border-box;
+                transform-origin: 0 0;
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                user-select: none
+            }
+
+            .annotationLayer * {
+                display: none
+            }
+
+            .annotationLayer .linkAnnotation,.annotationLayer canvas,.annotationLayer img {
+                display: block;
+                width: 100%;
+                height: 100%
+            }
+
+            .annotationLayer :is(.linkAnnotation,.buttonWidgetAnnotation.pushButton)>a {
+                display: block;
+                position: absolute;
+                font-size: 1em;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%
+            }
+
+            .annotationLayer :is(.linkAnnotation,.buttonWidgetAnnotation.pushButton):not(.hasBorder)>a:hover {
+                opacity: .2;
+                background-color: rgb(255 255 0);
+                box-shadow: 0 2px 10px rgb(255 255 0)
+            }
+
+            .annotationLayer .linkAnnotation.hasBorder:hover {
+                background-color: rgb(255 255 0 / .2)
+            }
+
+            .annotationLayer .hasBorder {
+                background-size: 100% 100%
+            }
+
+            .annotationLayer .textAnnotation img {
+                position: absolute;
+                cursor: pointer;
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0
+            }
+
+            .annotationLayer .annotationContent {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                pointer-events: none
+            }
+
+            .freetext:is(.annotationLayer .annotationContent) {
+                background: 0 0;
+                border: none;
+                inset: 0;
+                overflow: visible;
+                white-space: nowrap;
+                font: 10px sans-serif;
+                line-height: 1.35
+            }
+
+            :is(.annotationLayer section):has(div.annotationContent) canvas.annotationContent {
+                display: none
+            }
+        </style>
+    </head>
+    <body>
+        <div id="viewerContainer">
+            <div id="viewer" class="pdfViewer">
+                <div class="page" data-page-number="1" role="region" data-l10n-id="pdfjs-page-landmark" data-l10n-args="{&quot;page&quot;:1}" data-loaded="true" style="width: round(down, var(--it1) * 595.28px, var(--scale-round-x)); height: round(down, var(--it1) * 841.89px, var(--scale-round-y)); --scale-round-x: 8px; --scale-round-y: 8px; --page-same-width: 1.6798817363257628;" aria-label="Page ⁨1⁩" r-width="992">
+                    <div class="canvasWrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" version="1.1" width="595.28" height="841.89" viewBox="0 0 595.28 841.89">
+                            <defs>
+                                <clipPath id="clip_0">
+                                    <path transform="matrix(.1,0,0,-.1,0,841.89)" d="M496.43 499.973H5456.37V7921.973H496.43Z"></path>
+                                </clipPath>
+                            </defs>
+                            <path transform="matrix(.1,0,0,-.1,0,841.89)" d="M0-1.10156H5960V8418.898H0Z" fill="#ffffff"></path>
+                            <g clip-path="url(#clip_0)">
+                                <path transform="matrix(.1,0,0,-.1,0,841.89)" stroke-width="4" stroke-linecap="butt" stroke-miterlimit="10" stroke-linejoin="miter" fill="none" stroke="#000000" d="M566.93 7011.97H2966.93"></path>
+                            </g>
+                        </svg>
+                    </div>
+                    <div tabindex="0" class="textLayer" data-main-rotation="0" style="width: round(down, var(--it1) * 595.28px, var(--scale-round-x)); height: round(down, var(--it1) * 841.89px, var(--scale-round-y));">
+                        <span role="presentation" dir="ltr" style="left: 39.98%; top: 7.36%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">粵⾳朗讀測試</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 14.01%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0); font-weight: bold;">附件⼀</span>
+                        <span role="presentation" dir="ltr" style="left: 19.65%; top: 14.01%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif;"></span>
+                        <span role="presentation" dir="ltr" style="left: 23.01%; top: 14.01%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0); font-weight: bold;">粵⾳朗讀測試字表</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 20.67%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">⼀⼄丁七九了⼆⼈⼊⼋⼑⼒⼗⼜三下上丈丸凡久也乞亡</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 23.99%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">千叉⼝⼟⼠⼣⼤⼥⼦⼨⼩⼭⼯⼰已⼱⼸才丑丐不中之井</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 27.32%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">互五什今仍介元內六公切分化匹午升友反及太天夫孔少</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 30.64%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">尺巴引⼼户⼿扎⽀⽂⽄⽅⽇⽉⽊⽋⽌⽐⽑⽔⽕⽖⽗⽚⽛</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 33.97%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">⽜⽝王丙世且主乎付仔他仗代令以仙兄冊冬出刊加功包</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 37.29%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">匆北半卉卡去可古右司另叫只台句叭四囚外央失奶它巨</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 40.62%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">巧左市布平幼必打旦本未正母民永汁犯⽟⽠⽡⽢⽣⽤⽥</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 43.95%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">由甲申⽩⽪⽬⽯⽰⽲⽴丟乒乓交仿伙伊伍休任企件份充</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 47.27%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">光兇先全共再冰列划匠印危吉吐吋同各向名合吃后吊因</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 50.6%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">回地在多好她如字存宇守宅安寺尖州帆年式忙成扣托收</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 53.92%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">早曲有朱朵次此死汗污江池灰百⽵⽶⽺⽻⽼考⽽⽿⾁⾃</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 57.25%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">⾄⾆⾈⾊⾎⾏⾐西両串位住伴何估佈伸佔似但作你伯低</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 60.58%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">克免兵冷判別利刨劫助努即卵吞否呎吧吠呀吱呆吵吩告</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 63.9%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">吹吻吸含困坊址均圾坐壯夾妙妖孝完局屁尿尾巫希序弄</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 67.23%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">弟形忘忌志忍快戒我抗抖扶把找抄批扮投抓改更李材杆</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 70.55%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">村杖束步每求沛汪決沙沖沒汽沉災牠狂男皂盯社私秀究</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 73.88%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">肚良芒初⾒⾓⾔⾕⾖⾙⾛⾜⾝⾞⾟⾠那⾥防阱杧邨並乖</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 77.2%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">事些亞享京依侍佳使供例來佩兔兒兩具其典刻券刷刺到</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 80.53%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">刮制卒協卦卷取叔受味呵咖呢呼咐和周命固垃坪坡夜奇</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 83.86%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">奔妻妹姑姐始姓姊孤季定官宜尚居岸岡帚帖帕幸店府底</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 87.18%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">延弧往忠忽念怖怪怕性或房所承拉拌抹拒招拔拋拆抽押</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 90.51%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">拐拇披拍抵抱拖抬放斧於旺昆易明昏服朋枕枝林杯板枉</span>
+                        <div class="endOfContent"></div>
+                    </div>
+                    <div class="annotationLayer" hidden=""></div>
+                    <div class="annotationEditorLayer disabled" hidden="" dir="ltr" tabindex="0" data-main-rotation="0" style="width: round(down, var(--it1) * 595.28px, var(--scale-round-x)); height: round(down, var(--it1) * 841.89px, var(--scale-round-y));"></div>
+                </div>
+                <div class="page" data-page-number="2" role="region" data-l10n-id="pdfjs-page-landmark" data-l10n-args="{&quot;page&quot;:2}" style="width: round(down, var(--it1) * 595.28px, var(--scale-round-x)); height: round(down, var(--it1) * 841.89px, var(--scale-round-y)); --scale-round-x: 8px; --scale-round-y: 8px; --page-same-width: 1.6798817363257628;" aria-label="Page ⁨2⁩" data-loaded="true" r-width="992">
+                    <div class="canvasWrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" version="1.1" width="595.28" height="841.89" viewBox="0 0 595.28 841.89">
+                            <path transform="matrix(.1,0,0,-.1,0,841.89)" d="M0-2.19922H5960V8427.801H0Z" fill="#ffffff"></path>
+                        </svg>
+                    </div>
+                    <div tabindex="0" class="textLayer" data-main-rotation="0" style="width: round(down, var(--it1) * 595.28px, var(--scale-round-x)); height: round(down, var(--it1) * 841.89px, var(--scale-round-y));">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 7.36%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">東果松欣武氓氛泣注泳泥河泄沫法油況泊波沿治泡泛炎</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 10.69%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">炒爬爭爸牀版牧物狀狗狐玩玫的直知祈祇空者育肩肥肢</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 14.01%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">股肯舍芳芝芭芽花芬虎表衫迎返近采⾦⾧⾨阿阻附⾬青</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 17.34%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">⾮亭亮信侵便俠保促俗係冒冠剃前則勇勃勁南卻厚咬咳</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 20.67%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">咪哎哇品哈垂型垢城奏姿姨娃姥姪威孩宣室客封屎屏屋</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 23.99%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">巷帝帥度建很待律後思怒急怎怨恨恆恰恤扁拜挖按拼挑</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 27.32%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">持指括拾政故施既春是映星昨柿染柱柔架枯柄枴柚查柏</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 30.64%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">柳枱段毒泉洋洲津洞洗活派為炭炸炮狡狠珊玻珍甚界疤</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 33.97%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">皇盆相眉省看盼砌砂砍祕祝祖神科秒秋穿突竿紅紀約缸</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 37.29%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">美耐耍胖胡胃背胎致茅苦茄若茂苗英苔虹要計訂負赳軍</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 40.62%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">軌述郊郎酋重閂限陋陌降⾯⾳⾴⾵⾶⾷⾸⾹厘乘倍倦值</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 43.95%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">借倒們個候倘修倉兼冤准剛匪原唐哥哪哭員哨唆哦圃埋</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 47.27%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">夏套娘孫家宴宮宵害容射展峽峯島差席師庫庭座弱徒徑</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 50.6%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">恥恐恭恩息悦悄悔扇拿拳振捕捉捐效料旁旅時書朗校核</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 53.92%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">案框根桔桑栽桌柴格桃氣流浪涕浸消海浮浴烘烤烈烏特</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 57.25%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">狼狹狸班珠畜留疾病症疲疼益盎真眠眨矩破祟祥秤秧租</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 60.58%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">秩窄站笆笑粉紡紋索紗級紙紛缺羔翅翁耘耕脆能臭航般</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 63.9%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">荒荔荊草茶蚊蚣袖被記討託訓豺財貢起送迷退逃追酒配</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 67.23%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">釘針閃院陣陛除隻⾺⾻⾼⾾⿁乾停偏假做偉健偶側偷剪</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 70.55%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">副勒務動匙區參商啪啦啄啞啊唱問啡啤唸售圈國培堅基</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 73.88%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">堵堂堆夠婆婦婚密寄寂專將巢帶帳常康張強彗彩得從悠</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 77.2%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">您惦情惜戚控捲探接捷捧掘措捱掩掃掛掉排捨推掙採啟</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 80.53%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">救教敗敏晨晚望梳梯桶械梭梅條梨欲殺毫涼液淡淚深淺</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 83.86%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">清淇淋淹添淨爽牽猜猛球理現瓶甜產異略畢痕盛盒眼眾</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 87.18%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">票祭視移笨第笛粒粗紮紹細組累終羞習聊聆脱脣船莖莊</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 90.51%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">莓荷處蛇蛀蛋術袋袱規訪許設豉豚販責貨貪貧趾軟這通</span>
+                        <div class="endOfContent"></div>
+                    </div>
+                    <div class="annotationLayer" hidden=""></div>
+                    <div class="annotationEditorLayer disabled" hidden="" dir="ltr" tabindex="0" data-main-rotation="0" style="width: round(down, var(--it1) * 595.28px, var(--scale-round-x)); height: round(down, var(--it1) * 841.89px, var(--scale-round-y));"></div>
+                </div>
+                <div class="page" data-page-number="3" role="region" data-l10n-id="pdfjs-page-landmark" data-l10n-args="{&quot;page&quot;:3}" style="width: round(down, var(--it1) * 595.28px, var(--scale-round-x)); height: round(down, var(--it1) * 841.89px, var(--scale-round-y)); --scale-round-x: 8px; --scale-round-y: 8px; --page-same-width: 1.6798817363257628;" aria-label="Page ⁨3⁩" data-loaded="true" r-width="992">
+                    <div class="canvasWrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" version="1.1" width="595.28" height="841.89" viewBox="0 0 595.28 841.89">
+                            <path transform="matrix(.1,0,0,-.1,0,841.89)" d="M0-3.30078H5960V8426.699H0Z" fill="#ffffff"></path>
+                        </svg>
+                    </div>
+                    <div tabindex="0" class="textLayer" data-main-rotation="0" style="width: round(down, var(--it1) * 595.28px, var(--scale-round-x)); height: round(down, var(--it1) * 841.89px, var(--scale-round-y));">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 7.36%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">逗連速逐造透逢逛途部都野釣陪陸陰陷雀雪章竟頂⿂⿃</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 10.69%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">⿅⿆⿇梘焗傍備傘最割創剩勞勝啼喜喔喇喃喱喝喂單喊</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 14.01%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">喲喚喻喉圍報堪場堡壹壺婿嫂寒富寓尊尋就幅帽幾廊廂</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 17.34%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">廁復惡悶悲惰惱愉掌掣揮插握提揚換搜敢散斑斯普晴晶</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 20.67%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">景暑智曾替期朝棄棕椅森棒棲棋植棵棍棉棚款欺殘殼毯</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 23.99%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">游渡港渠湖溉湯渴渺測減温煮無然牌猴琢琵琶琴甥畫番</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 27.32%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">疏痛痘登發盜着短硬稍程稀窗童等筆筒答筋粟粥統結絨</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 30.64%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">絕紫絮絲給善腕腔脾舒菩萍菠華菱著菌菲菊萄菜虛蛙蛛</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 33.97%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">街裁裂裙補裕詠評詞訴診象貯費賀貼貴買越超距跑跌週</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 37.29%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">進郵鄉量鈕鈔鈎開閑間閒隊階陽雁集雲項順須飯飲⿈⿊</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 40.62%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">睇粧菇亂傭傲傳傾催傷傻勤勢嗎嗡園圓塞塑塘塗塔填塊</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 43.95%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">媽幹廉廈微意想愚感愛慌愧搞搓搭損搬搶搖搗敬新暗暖</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 47.27%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">會楚極椰業楊楓歲毀殿毽源溝滅滋滑準滔溪煙煩煤煉照</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 50.6%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">煞爺猾獅瑚畸當痰睛睦睬矮碎碰碗碌禁福禍萬禽稚筷節</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 53.92%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">經綁置署罪羣義聖肆腰腸腳腫腦舅與艇落葵葉葱葡號蜈</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 57.25%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">蜂蜓裝裏解該詳試詩誠話詢賊跡跟跨路跳躲較載農運遊</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 60.58%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">道遍達逼遇過酪鉗鉛鈴隔雷電零預頑頓頒頌飼飽飾馳馴</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 63.9%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">⿍⿎⿏煲僕像凳劃厭嗽嘔嘉嘗團圖塵塾境壽夢奪孵寞實</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 67.23%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">察對幣幕慈態慚慢慣慘摘摔敲旗榜榕榮構榴槍榦歉歌演</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 70.55%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">滾滴漏漂漢滿漆漱漸漲漠漫漁滲熊熄爾瑰疑瘋瘦盡睡碟</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 73.88%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">碧種稱窩端管算箏粽精網緊綠綿綵維罰聞聚腐膀膏腿舞</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 77.2%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">蓄蓋蒸蒐蒼蜜蜻蜘蝕裳裹製褐説誦誌語認誤貌賓趕輔輕</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 80.53%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">遠遙酸銀銅際需領颱餃餅骯麼⿐⿑儀僻價劇劍厲嘻嘹嘲</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 83.86%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">噴增寬寫層廢廚廟廣廠彈影德慶慧憂慰慾憐憎憤摩撞撥</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 87.18%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">撕撐撲播敵數暫暴樣標模樓樂歐毆漿潑潦潔澆熟熱獎璃</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 90.51%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">瘡皺盤瞎磅確磁碼稻窮箭篇箱範糊編練緻線罵罷膝膠膚</span>
+                        <div class="endOfContent"></div>
+                    </div>
+                    <div class="annotationLayer" hidden=""></div>
+                    <div class="annotationEditorLayer disabled" hidden="" dir="ltr" tabindex="0" data-main-rotation="0" style="width: round(down, var(--it1) * 595.28px, var(--scale-round-x)); height: round(down, var(--it1) * 841.89px, var(--scale-round-y));"></div>
+                </div>
+                <div class="page" data-page-number="4" role="region" data-l10n-id="pdfjs-page-landmark" data-l10n-args="{&quot;page&quot;:4}" style="width: round(down, var(--it1) * 595.28px, var(--scale-round-x)); height: round(down, var(--it1) * 841.89px, var(--scale-round-y)); --scale-round-x: 8px; --scale-round-y: 8px; --page-same-width: 1.6798817363257628;" aria-label="Page ⁨4⁩" data-loaded="true" r-width="992">
+                    <div class="canvasWrapper">
+                        <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" version="1.1" width="595.28" height="841.89" viewBox="0 0 595.28 841.89">
+                            <path transform="matrix(.1,0,0,-.1,0,841.89)" d="M0-4.39844H5960V8425.602H0Z" fill="#ffffff"></path>
+                        </svg>
+                    </div>
+                    <div tabindex="0" class="textLayer" data-main-rotation="0" style="width: round(down, var(--it1) * 595.28px, var(--scale-round-x)); height: round(down, var(--it1) * 841.89px, var(--scale-round-y));">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 7.36%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">艘蔗蓮蔭蔔蝙蝴蝶蝠蝦蝸衝褲誼諒談請課誕調誰論豬賣</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 10.69%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">賞趣踢踏踩躺輛輦輪適遮鄰鋭鋪鋤鋒閲震霉靠鞍鞋養餓</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 14.01%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">餘駝駕駛髮鬧魷鴉麪黎墨⿒舖靚嘴器壁奮學導憶懂戰擁</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 17.34%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">撻擂擋擇操擔撿整曆曉樽橙橫樹橢橡橋機澡激燒燈燕燃</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 20.67%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">獨磨磚積築糕糖興舉蔬蕊蕉螢螞衞親謀諧貓輸辦辨遵選</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 23.99%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">遲遺醒錶鋸錯錢鋼錄隧隨險雕霓靜頭餐館餡駱鮑鴦鴨鴛</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 27.32%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">默⿓儲優勵嘯嚇嚏壓嬰幫應戴戲擊擠擦檔檢濕營燦燭牆</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 30.64%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">獲環瞬禮糞縮績縫總繁翼聲聰聯臂臉臨艱薪薄蕾薯螺謎</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 33.97%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">講謊謠謝賽購蹈避還邀醜鍵鍋鍛闊雖霜顆餵鮮鴿點嚐叢</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 37.29%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">嬸擴擲擾擺斷檸櫃檬歸濾濺獵禱簡糧織職舊薩藍藏蟬蟲</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 40.62%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">覆豐蹤軀轉醫醬釐鎮雜雙雞鞭額顏題騎鬆鯊鵝⿔餸嚨壞</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 43.95%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">寵龐懷懶獸瓣穫穩簿簽繩繪羅羹臘藝藤藥蟻蠅蟹識證贊</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 47.27%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">辭邊鏡關難離霧類願騙鬍鯨麗勸嚷嚴寶懸爐獻礦競籃籍</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 50.6%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">糯辮繼耀艦藹蘑藻蘋襪覺議警釋鐘飄饑鹹齡騮屬攝攜欄</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 53.92%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">灌爛續蘭蠟襯覽護躍鐵露響顧騾魔囊巒彎攤權歡灑灘疊</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 57.25%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">籠聽聾臟讀驕鬚鷗攪曬蘿變顯驚驗髒體罐蠶讓靈鷹鹽廳</span>
+                        <br role="presentation">
+                        <span role="presentation" dir="ltr" style="left: 9.58%; top: 60.58%; font-size: calc(var(--it1) *20.00px); font-family: sans-serif; transform: scaleX(1.00292); color: rgb(0, 0, 0);">灣籬籮觀讚驢纜鑽鱷豔</span>
+                        <div class="endOfContent"></div>
+                    </div>
+                    <div class="annotationLayer" hidden=""></div>
+                    <div class="annotationEditorLayer disabled" hidden="" dir="ltr" tabindex="0" data-main-rotation="0" style="width: round(down, var(--it1) * 595.28px, var(--scale-round-x)); height: round(down, var(--it1) * 841.89px, var(--scale-round-y));"></div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
